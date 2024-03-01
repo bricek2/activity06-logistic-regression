@@ -82,7 +82,7 @@ glimpse(resume)
   First, look at each line of code and describe what I am doing.
   Then, replace "verbatim" with "r" before the code chunk title to produce this table.
   
-```{verbatim callback_frequency_table}
+```{r callback_frequency_table}
 resume %>% 
   mutate(received_callback = case_when(
     received_callback == 0 ~ "No",
@@ -97,6 +97,7 @@ resume %>%
 
 5. Using the output from (3) and (4), what do you notice?
 
+*Revieved_callback no is heavily the majority class*
 
 ## Probability and odds
 
@@ -104,9 +105,11 @@ Using your output from (3) and (4), answer the following questions:
 
 6. What is the probability that a randomly selected résumé/person will be called back?
 
+*8%: .08/1-.08 or 2 out of 23*
 
 7. What are the [**odds**](https://en.wikipedia.org/wiki/Odds) that a randomly selected résumé/person will be called back?
 
+*92%: .92/1-.92 or 23 to 2*
 
 ## Logistic regression
 
@@ -134,7 +137,7 @@ Below is a two-way table (also known as a contingency table or crosstable), wher
 Note that the values in each column add to 100%.
 Replace "verbatim" with "r" before the code chunk title to produce this table.
 
-```{verbatim crosstable}
+```{r crosstable}
 resume %>% 
   mutate(received_callback = case_when(
     received_callback == 0 ~ "No",
@@ -160,9 +163,11 @@ Using the above table, answer the following question:
 
 6. What is the probability that a randomly selected résumé/person perceived as Black will be called back?
 
+*.0645*
 
 7. What are the **odds** that a randomly selected résumé/person perceived as Black will be called back?
 
+*.0645/1-.0645*
 
 This process of calculating conditional (e.g., if a résumé/person perceived as Black is called back) odds will be helpful as we fit our logistic model.
 We will now begin to use the `{tidymodel}` method for fitting models.
@@ -170,7 +175,7 @@ A similar approach could be used for linear regression models and you are encour
 
 - Replace "verbatim" with "r" before the code chunk title to produce the logistic model output.
   
-```{verbatim logistic-model}
+```{r logistic-model}
 # The {tidymodels} method for logistic regression requires that the response be a factor variable
 resume <- resume %>% 
   mutate(received_callback = as.factor(received_callback))
@@ -192,6 +197,7 @@ After doing this, respond to the following questions:
 8. Write the estimated regression equation.
   Round to 3 digits.
 
+*Y = .438x - 2.675*
 
 9. Using your equation in (8), write the *simplified* estimated regression equation corresponding to résumés/persons perceived as Black.
   Round to 3 digits.
@@ -201,17 +207,28 @@ Based on your model, if a randomly selected résumé/person perceived as Black,
 
 10. What are the log-odds that they will be called back?
 
+```{r lo black}
+log(.0645/(1-.0645))
+```
+
 
 11. What are the odds that they will be called back?
   How does this relate back to your answer from (7)?
   *Hint*: In (9) you obtained the log-odds (i.e., the natural log-odds).
   How can you back-transform this value to obtain the odds?
 
+```{r transform back }
+exp(-2.674416)
+```
+
 
 12. What is the probability that will be called back?
   How does this related back to your answer from (6)?
   *Hint* Use the odds in (11) to calculate this value.
 
+```{r}
+.06894708/(1+.06894708)
+```
 
 
 
@@ -219,10 +236,11 @@ Based on your model, if a randomly selected résumé/person perceived as Black,
   How can you use it help you answer (12)?
   Replace "verbatim" with "r" before the code chunk title to produce the logistic model output.
 
-```{verbatim logistic-model}
-tidy(mult_log_mod, exponentiate = TRUE, conf.int = TRUE) %>% 
+```{r logistic-model}
+tidy(resume_mod, exponentiate = TRUE, conf.int = TRUE) %>% 
   knitr::kable(digits = 3)
 ```
+
 
 
 ## Challenge: Extending to Mulitple Logistic Regression
@@ -242,7 +260,7 @@ The authors do not address this decision in their article or provide any context
 
 - Replace "verbatim" with "r" before the code chunk title to produce this table.
 
-```{verbatim resume-subset}
+```{r resume-subset}
 resume_subet <- resume %>% 
   filter(job_city == "Chicago") %>% 
   mutate(race = case_when(
@@ -258,7 +276,7 @@ resume_subet <- resume %>%
 
 Describe what the above code does in the context of this problem.
 
-
+*Creates a subset of observations in Chicago and renames the race and gender features.*
 
 ## Relationship Exploration
 
@@ -268,10 +286,26 @@ Note that I tried to explore this using `GGally::ggbivariate`, but kept running 
 
 - Create a new R code chunk and create an appropriate data visualization to explore the relationship between `resume_subet` and each of the explanatory variables, then run your code chunk or knit your document.
 
+```{r}
+ggplot(resume_subet, aes(x = race, fill = received_callback)) + 
+  geom_bar(position = "stack") +
+  labs(title = "Stacked Bar Chart of Race by Recieved Callback", x = "Race", y = "Count")
+```
+```{r plot eda}
+ggplot(resume_subet, aes(x = race, fill = received_callback)) + 
+  geom_bar(position = "dodge") +
+  facet_wrap(~ gender) 
+```
+```{r}
+count(resume_subet, gender)
+```
+
+
 After doing this, answer the following question:
 
 14. Describe any patterns. What do you notice?
 
+*More females*
 
 ## Fitting the model
 
@@ -326,14 +360,35 @@ Since Pearson residuals are similar to residuals that we have already explored, 
 - Replace "verbatim" with "r" before the code chunk title to produce this table. 
   You might need to update other R objects in this code - my model was called `mult_log_mod`
   
-```{verbatim residual-plots}
+```{r split}
+set.seed(631)
+
+resume_split <- initial_split(resume, prop = 0.8)
+
+resume_train <- training(resume_split)
+resume_test <- testing(resume_split)
+
+```
+  
+  
+```{r log model2}
+resume_mod2 <- logistic_spec %>%
+  fit(received_callback ~ race, data = resume_train, family = "binomial")
+
+tidy(resume_mod) %>% 
+  knitr::kable(digits = 3)
+```
+  
+  
+  
+```{r residual-plots}
 # To store residuals and create row number variable
-mult_log_aug <- augment(mult_log_mod, type.predict = "response", 
+mult_log_aug <- augment(resume_mod, new_data = resume_test, type.predict = "response", 
                       type.residuals = "deviance") %>% 
                       mutate(id = row_number())
 
 # Plot residuals vs fitted values
-ggplot(data = mult_log_aug, aes(x = .fitted, y = .resid)) + 
+ggplot(data = mult_log_aug, aes(x = .pred_class, y = .resid)) + 
 geom_point() + 
 geom_hline(yintercept = 0, color = "red") + 
 labs(x = "Fitted values", 
