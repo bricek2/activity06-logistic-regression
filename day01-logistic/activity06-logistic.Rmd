@@ -15,9 +15,19 @@ Again, we will use two packages from Posit: `{tidyverse}` and `{tidymodels}`.
   - Load `{tidyverse}` and `{tidymodels}` and any other packages you want to use.
 - Give your R code chunk a meaningful name, then run your code chunk or knit your document.
 
+```{r load data}
+library(tidymodels)
+library(tidyverse)
+library(readr)
+```
 
 
 ## Load the data
+
+```{r load data}
+resume <- read.csv("data/resume.csv")
+```
+
 
 ### The data
 
@@ -43,22 +53,30 @@ Read in the `resume` **CSV** file that is in `day01-logistic/data`.
 - Give your R code chunk a meaningful name, then run your code chunk or knit your document.
 
 
-
 Recall that you can use `dplyr::glimpse` to see some meta information about the R data frame.
 After doing this and your review of the data's description page, answer the following questions:
+
+```{r glimpse}
+
+glimpse(resume)
+```
+
 
 1. Is this an observational study or an experiment?
   Explain.
 
+*Experimental, manufacturing different variables ( gender and race) for resumes. Observational would be when nothing is touched.*
 
 2. The variable of interest is `received_callback`.
   What type of variable is this?
   What do the values represent?
 
+*Binary Catergorical*
 
 3. For `received_callback`, create an appropriate data visualization using `{ggplot2}`.
   Be sure to provide more descriptive labels (both axes labels and value labels - there are many ways to do this) as well as an appropriate title.
 
+*Bar chart to see the totals, and boxplot to see the distribution*
 
 4. Below, I provide you with a numerical summary table that should reiterate (i.e., provides numerical values) your plot in (3).
   First, look at each line of code and describe what I am doing.
